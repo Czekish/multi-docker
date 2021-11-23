@@ -1,0 +1,23 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker build -t czekish/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true czekish/react-test npm test
+
+after_success:
+  - docker build -t czekish/multi-client ./client
+  - docker build -t czekish/multi-nginx ./nginx
+  - docker build -t czekish/multi-server ./server
+  - docker build -t czekish/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push czekish/multi-client
+  - docker push czekish/multi-nginx
+  - docker push czekish/multi-server
+  - docker push czekish/multi-worker
